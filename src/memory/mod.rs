@@ -10,11 +10,11 @@ use core::{
 };
 use parity_wasm::elements::ResizableLimits;
 
-#[cfg(all(unix, not(feature = "vec_memory")))]
+#[cfg(all(any(unix, windows), not(feature = "vec_memory")))]
 #[path = "mmap_bytebuf.rs"]
 mod bytebuf;
 
-#[cfg(any(not(unix), feature = "vec_memory"))]
+#[cfg(any(not(any(unix, windows)), feature = "vec_memory"))]
 #[path = "vec_bytebuf.rs"]
 mod bytebuf;
 
