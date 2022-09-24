@@ -119,24 +119,37 @@ impl MemoryInstance {
     ///
     /// [`LINEAR_MEMORY_PAGE_SIZE`]: constant.LINEAR_MEMORY_PAGE_SIZE.html
     pub fn alloc(initial: Pages, maximum: Option<Pages>) -> Result<MemoryRef, Error> {
-        {
-            let initial_u32: u32 = initial.0.try_into().map_err(|_| {
-                Error::Memory(format!("initial ({}) can't be coerced to u32", initial.0))
-            })?;
-            let maximum_u32: Option<u32> = maximum
-                .map(|maximum_pages| {
-                    maximum_pages.0.try_into().map_err(|_| {
-                        Error::Memory(format!(
-                            "maximum ({}) can't be coerced to u32",
-                            maximum_pages.0
-                        ))
+        let f = || {
+            {
+                let initial_u32: u32 = initial.0.try_into().map_err(|_| {
+                    Error::Memory(format!("initial ({}) can't be coerced to u32", initial.0))
+                })?;
+                let maximum_u32: Option<u32> = maximum
+                    .map(|maximum_pages| {
+                        maximum_pages.0.try_into().map_err(|_| {
+                            Error::Memory(format!(
+                                "maximum ({}) can't be coerced to u32",
+                                maximum_pages.0
+                            ))
+                        })
                     })
-                })
-                .transpose()?;
-            validation::validate_memory(initial_u32, maximum_u32).map_err(Error::Memory)?;
-        }
+                    .transpose()?;
+                validation::validate_memory(initial_u32, maximum_u32).map_err(Error::Memory)?;
+            }
 
-        let memory = MemoryInstance::new(initial, maximum)?;
+            let memory = MemoryInstance::new(initial, maximum)?;
+            Ok(memory)
+        };
+        let memory = f().map_err(|err: Error| {
+            log::error!(
+                "MemoryInstance::alloc({:?}, {:?}): {}",
+                initial,
+                maximum,
+                err
+            );
+
+            err
+        })?;
         Ok(MemoryRef(Rc::new(memory)))
     }
 
