@@ -1,11 +1,6 @@
 use crate::{
-    context::ModuleContext,
-    stack::StackWithLimit,
-    util::Locals,
-    Error,
-    FuncValidator,
-    DEFAULT_MEMORY_INDEX,
-    DEFAULT_TABLE_INDEX,
+    context::ModuleContext, stack::StackWithLimit, util::Locals, Error, FuncValidator,
+    DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX,
 };
 
 use core::u32;
@@ -783,6 +778,13 @@ impl<'a> FunctionValidationContext<'a> {
             F64ReinterpretI64 => {
                 self.validate_cvtop(ValueType::I64, ValueType::F64)?;
             }
+
+            // NOTE: safe here since this is just a workaround for gear
+            // and these instructions have been validated in other packages.
+            //
+            // btw, this package is not intended to be used in production
+            // anymore since the wasmi 0.14.0 has already removed this.
+            SignExt(_) => {}
         }
 
         Ok(())
