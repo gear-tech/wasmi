@@ -1,11 +1,18 @@
-mod buffer;
+#[cfg(all(feature = "virtual_memory", target_pointer_width = "64"))]
+#[path = "buffer_vmem.rs"]
+mod byte_buffer;
+
+#[cfg(not(all(feature = "virtual_memory", target_pointer_width = "64")))]
+#[path = "buffer_vec.rs"]
+mod byte_buffer;
+
 mod data;
 mod error;
 
 #[cfg(test)]
 mod tests;
 
-use self::buffer::ByteBuffer;
+use self::byte_buffer::ByteBuffer;
 pub use self::{
     data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
     error::MemoryError,
@@ -29,6 +36,11 @@ impl ArenaIndex for MemoryIdx {
         });
         Self(value)
     }
+}
+
+/// Returns the maximum virtual memory buffer length in bytes.
+fn max_memory_len() -> usize {
+    i32::MAX as u32 as usize
 }
 
 /// The memory type of a linear memory.
@@ -133,7 +145,7 @@ impl MemoryEntity {
             .to_bytes()
             .ok_or(MemoryError::OutOfBoundsAllocation)?;
         let memory = Self {
-            bytes: ByteBuffer::new(initial_len),
+            bytes: ByteBuffer::new(initial_len)?,
             memory_type,
             current_pages: initial_pages,
         };
@@ -187,7 +199,7 @@ impl MemoryEntity {
             .ok_or(MemoryError::OutOfBoundsAllocation)?;
         // At this point it is okay to grow the underlying virtual memory
         // by the given amount of additional pages.
-        self.bytes.grow(new_size);
+        self.bytes.grow(new_size)?;
         self.current_pages = new_pages;
         Ok(current_pages)
     }

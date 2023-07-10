@@ -1,5 +1,6 @@
 use super::MemoryType;
 use core::{fmt, fmt::Display};
+use wasmi_core::VirtualMemoryError;
 
 /// An error that may occur upon operating with virtual or linear memory.
 #[derive(Debug)]
@@ -13,6 +14,8 @@ pub enum MemoryError {
     OutOfBoundsAccess,
     /// Tried to create an invalid linear memory type.
     InvalidMemoryType,
+    /// A generic virtual memory error.
+    Vmem(VirtualMemoryError),
     /// Occurs when `ty` is not a subtype of `other`.
     InvalidSubtype {
         /// The [`MemoryType`] which is not a subtype of `other`.
@@ -37,9 +40,16 @@ impl Display for MemoryError {
             Self::InvalidMemoryType => {
                 write!(f, "tried to create an invalid virtual memory type")
             }
+            Self::Vmem(error) => Display::fmt(error, f),
             Self::InvalidSubtype { ty, other } => {
                 write!(f, "memory type {ty:?} is not a subtype of {other:?}",)
             }
         }
+    }
+}
+
+impl From<VirtualMemoryError> for MemoryError {
+    fn from(error: VirtualMemoryError) -> Self {
+        Self::Vmem(error)
     }
 }

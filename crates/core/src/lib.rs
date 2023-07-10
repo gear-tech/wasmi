@@ -18,8 +18,8 @@ mod units;
 mod untyped;
 mod value;
 
-#[cfg(not(feature = "std"))]
-extern crate alloc;
+#[cfg(feature = "virtual_memory")]
+mod vmem;
 
 #[cfg(feature = "std")]
 extern crate std as alloc;
@@ -43,3 +43,6 @@ pub use self::{
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedValue},
     value::ValueType,
 };
+
+#[cfg(feature = "virtual_memory")]
+pub use self::vmem::{VirtualMemory, VirtualMemoryError};
