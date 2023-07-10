@@ -30,10 +30,10 @@ impl ByteBuffer {
     ///
     /// - If the initial length is 0.
     /// - If the initial length exceeds the maximum supported limit.
-    pub fn new(initial_len: usize) -> Self {
-        Self {
+    pub fn new(initial_len: usize) -> Result<Self, VirtualMemoryError> {
+        Ok(Self {
             bytes: vec![0x00_u8; initial_len],
-        }
+        })
     }
 
     /// Grows the byte buffer to the given `new_size`.
@@ -41,9 +41,10 @@ impl ByteBuffer {
     /// # Panics
     ///
     /// If the current size of the [`ByteBuffer`] is larger than `new_size`.
-    pub fn grow(&mut self, new_size: usize) {
+    pub fn grow(&mut self, new_size: usize) -> Result<(), VirtualMemoryError> {
         assert!(new_size >= self.len());
         self.bytes.resize(new_size, 0x00_u8);
+        Ok(())
     }
 
     /// Returns the length of the byte buffer in bytes.

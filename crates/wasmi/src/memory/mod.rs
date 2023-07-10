@@ -21,6 +21,8 @@ use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::Pages;
 
+pub use byte_buffer::VirtualMemoryError;
+
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MemoryIdx(u32);

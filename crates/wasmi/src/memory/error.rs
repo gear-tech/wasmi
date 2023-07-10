@@ -1,6 +1,6 @@
 use super::MemoryType;
+use crate::memory::VirtualMemoryError;
 use core::{fmt, fmt::Display};
-use wasmi_core::VirtualMemoryError;
 
 /// An error that may occur upon operating with virtual or linear memory.
 #[derive(Debug)]

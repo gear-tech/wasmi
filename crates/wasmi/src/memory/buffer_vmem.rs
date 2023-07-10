@@ -1,6 +1,7 @@
 use super::{max_memory_len, MemoryError};
 use core::fmt::Debug;
 use wasmi_core::VirtualMemory;
+
 pub use wasmi_core::VirtualMemoryError;
 
 /// A virtual memory based byte buffer implementation.
