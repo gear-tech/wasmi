@@ -53,6 +53,10 @@ impl Debug for VirtualMemory {
     }
 }
 
+unsafe impl Sync for VirtualMemory {}
+
+unsafe impl Send for VirtualMemory {}
+
 impl VirtualMemory {
     /// The maximum allocation size for a `wasmi` virtual memory.
     const MAX_ALLOCATION_SIZE: usize = u32::MAX as usize;
