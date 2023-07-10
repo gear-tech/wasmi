@@ -50,14 +50,13 @@ impl ByteBuffer {
     /// # Errors
     ///
     /// If the new length of the byte buffer would exceed the maximum supported limit.
-    pub fn grow(&mut self, delta: usize) -> Result<(), MemoryError> {
-        let new_len = self
-            .len()
-            .checked_add(delta)
-            .filter(|&new_len| new_len < max_memory_len())
-            .ok_or(MemoryError::OutOfBoundsGrowth)?;
-        assert!(new_len >= self.len());
-        self.len = new_len;
+    pub fn grow(&mut self, new_size: usize) -> Result<(), MemoryError> {
+        if new_size >= max_memory_len() {
+            return Err(MemoryError::OutOfBoundsGrowth)?;
+        }
+
+        assert!(new_size >= self.len());
+        self.len = new_size;
         Ok(())
     }
 
@@ -75,4 +74,9 @@ impl ByteBuffer {
     pub fn data_mut(&mut self) -> &mut [u8] {
         &mut self.bytes.data_mut()[..self.len]
     }
+}
+
+/// Returns the maximum virtual memory buffer length in bytes.
+fn max_memory_len() -> usize {
+    i32::MAX as u32 as usize
 }

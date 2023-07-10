@@ -40,11 +40,6 @@ impl ArenaIndex for MemoryIdx {
     }
 }
 
-/// Returns the maximum virtual memory buffer length in bytes.
-fn max_memory_len() -> usize {
-    i32::MAX as u32 as usize
-}
-
 /// The memory type of a linear memory.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
