@@ -21,6 +21,9 @@ mod value;
 #[cfg(feature = "virtual_memory")]
 mod vmem;
 
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
