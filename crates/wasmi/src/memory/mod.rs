@@ -196,7 +196,7 @@ impl MemoryEntity {
             .ok_or(MemoryError::OutOfBoundsAllocation)?;
         // At this point it is okay to grow the underlying virtual memory
         // by the given amount of additional pages.
-        self.bytes.grow(new_size)?;
+        self.bytes.grow(new_size);
         self.current_pages = new_pages;
         Ok(current_pages)
     }

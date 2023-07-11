@@ -41,10 +41,9 @@ impl ByteBuffer {
     /// # Panics
     ///
     /// If the current size of the [`ByteBuffer`] is larger than `new_size`.
-    pub fn grow(&mut self, new_size: usize) -> Result<(), VirtualMemoryError> {
+    pub fn grow(&mut self, new_size: usize) {
         assert!(new_size >= self.len());
         self.bytes.resize(new_size, 0x00_u8);
-        Ok(())
     }
 
     /// Returns the length of the byte buffer in bytes.
