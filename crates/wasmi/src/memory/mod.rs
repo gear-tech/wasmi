@@ -1,11 +1,18 @@
-mod buffer;
+#[cfg(all(feature = "virtual_memory", target_pointer_width = "64"))]
+#[path = "buffer_vmem.rs"]
+mod byte_buffer;
+
+#[cfg(not(all(feature = "virtual_memory", target_pointer_width = "64")))]
+#[path = "buffer.rs"]
+mod byte_buffer;
+
 mod data;
 mod error;
 
 #[cfg(test)]
 mod tests;
 
-use self::buffer::ByteBuffer;
+use self::byte_buffer::ByteBuffer;
 pub use self::{
     data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
     error::MemoryError,
