@@ -1,4 +1,4 @@
-use super::{max_memory_len, MemoryError};
+use super::MemoryError;
 use core::fmt::Debug;
 use wasmi_core::VirtualMemory;
 
@@ -51,7 +51,7 @@ impl ByteBuffer {
     ///
     /// If the new length of the byte buffer would exceed the maximum supported limit.
     pub fn grow(&mut self, new_size: usize) -> Result<(), MemoryError> {
-        if new_size >= max_memory_len() {
+        if new_size > Self::ALLOCATION_SIZE {
             return Err(MemoryError::OutOfBoundsGrowth)?;
         }
 
@@ -74,9 +74,4 @@ impl ByteBuffer {
     pub fn data_mut(&mut self) -> &mut [u8] {
         &mut self.bytes.data_mut()[..self.len]
     }
-}
-
-/// Returns the maximum virtual memory buffer length in bytes.
-fn max_memory_len() -> usize {
-    i32::MAX as u32 as usize
 }
