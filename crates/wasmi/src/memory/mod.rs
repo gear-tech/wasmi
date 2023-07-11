@@ -3,7 +3,7 @@
 mod byte_buffer;
 
 #[cfg(not(all(feature = "virtual_memory", target_pointer_width = "64")))]
-#[path = "buffer_vec.rs"]
+#[path = "buffer.rs"]
 mod byte_buffer;
 
 mod data;
