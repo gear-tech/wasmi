@@ -2,9 +2,9 @@ name: Rust - Continuous Integration
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "gear-v0.30.0" ]
   pull_request:
-    branches: [ master ]
+    branches: [ "gear-v0.30.0" ]
 
 jobs:
   check:
