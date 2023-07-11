@@ -1,15 +1,4 @@
 use alloc::{vec, vec::Vec};
-use core::{fmt, fmt::Display};
-
-/// Dummy error for fallible `Vec`-based virtual memory operations.
-#[derive(Debug)]
-pub struct VirtualMemoryError {}
-
-impl Display for VirtualMemoryError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "encountered failure while operating with virtual memory")
-    }
-}
 
 /// A `Vec`-based byte buffer implementation.
 ///
@@ -30,10 +19,10 @@ impl ByteBuffer {
     ///
     /// - If the initial length is 0.
     /// - If the initial length exceeds the maximum supported limit.
-    pub fn new(initial_len: usize) -> Result<Self, VirtualMemoryError> {
-        Ok(Self {
+    pub fn new(initial_len: usize) -> Self {
+        Self {
             bytes: vec![0x00_u8; initial_len],
-        })
+        }
     }
 
     /// Grows the byte buffer to the given `new_size`.

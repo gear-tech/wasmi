@@ -21,8 +21,6 @@ use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::Pages;
 
-pub use byte_buffer::VirtualMemoryError;
-
 /// A raw index to a linear memory entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MemoryIdx(u32);
@@ -142,7 +140,7 @@ impl MemoryEntity {
             .to_bytes()
             .ok_or(MemoryError::OutOfBoundsAllocation)?;
         let memory = Self {
-            bytes: ByteBuffer::new(initial_len)?,
+            bytes: ByteBuffer::new(initial_len),
             memory_type,
             current_pages: initial_pages,
         };

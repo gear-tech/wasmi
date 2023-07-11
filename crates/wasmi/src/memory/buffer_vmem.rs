@@ -1,8 +1,5 @@
-use super::MemoryError;
 use core::fmt::Debug;
 use wasmi_core::VirtualMemory;
-
-pub use wasmi_core::VirtualMemoryError;
 
 /// A virtual memory based byte buffer implementation.
 ///
@@ -37,12 +34,13 @@ impl ByteBuffer {
     ///
     /// - If the initial length is 0.
     /// - If the initial length exceeds the maximum supported limit.
-    pub fn new(initial_len: usize) -> Result<Self, MemoryError> {
-        let bytes = VirtualMemory::new(Self::ALLOCATION_SIZE)?;
-        Ok(Self {
+    pub fn new(initial_len: usize) -> Self {
+        let bytes = VirtualMemory::new(Self::ALLOCATION_SIZE)
+            .unwrap_or_else(|err| unreachable!("Failed to allocate memory: {err}"));
+        Self {
             bytes,
             len: initial_len,
-        })
+        }
     }
 
     /// Grows the byte buffer by the given delta.
