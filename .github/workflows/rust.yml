@@ -198,7 +198,10 @@ jobs:
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-udeps
-        run: cargo install cargo-udeps
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-udeps was already installed on the CI runner.
+          cargo install cargo-udeps || true
       - uses: actions-rs/cargo@v1
         with:
           command: udeps
@@ -230,7 +233,10 @@ jobs:
       - name: Checkout Submodules
         run: git submodule update --init --recursive
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz
+        run: |
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-udeps was already installed on the CI runner.
+          cargo install cargo-fuzz || true
       - name: Fuzz Translate
         uses: actions-rs/cargo@v1
         with:
