@@ -138,7 +138,7 @@ impl GlobalType {
 }
 
 /// A global variable entity.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GlobalEntity {
     /// The current value of the global variable.
     value: UntypedValue,
@@ -203,6 +203,7 @@ impl GlobalEntity {
     }
 
     /// Returns a pointer to the untyped value of the global variable.
+    #[allow(dead_code)]
     pub(crate) fn get_untyped_ptr(&mut self) -> NonNull<UntypedValue> {
         NonNull::from(&mut self.value)
     }
@@ -257,8 +258,7 @@ impl Global {
         ctx.as_context_mut()
             .store
             .inner
-            .resolve_global_mut(self)
-            .set(new_value)
+            .with_resolve_global_mut(self, |entity| entity.set(new_value))
     }
 
     /// Returns the current value of the global variable.

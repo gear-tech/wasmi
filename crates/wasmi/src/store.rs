@@ -26,10 +26,12 @@ use crate::{
     TableEntity,
     TableIdx,
 };
+use alloc::sync::Arc;
 use core::{
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
 };
+use spin::RwLock;
 use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
 use wasmi_core::TrapCode;
 
@@ -97,7 +99,7 @@ pub struct StoreInner {
     /// Stored tables.
     tables: Arena<TableIdx, TableEntity>,
     /// Stored global variables.
-    globals: Arena<GlobalIdx, GlobalEntity>,
+    globals: Globals,
     /// Stored module instances.
     instances: Arena<InstanceIdx, InstanceEntity>,
     /// Stored data segments.
@@ -114,6 +116,53 @@ pub struct StoreInner {
     engine: Engine,
     /// The fuel of the [`Store`].
     fuel: Fuel,
+}
+
+type GlobalsArena = Arena<GlobalIdx, GlobalEntity>;
+
+#[derive(Debug, Clone)]
+pub struct Globals {
+    store_idx: StoreIdx,
+    arena: Arc<RwLock<GlobalsArena>>,
+}
+
+impl Globals {
+    fn new(store_idx: StoreIdx) -> Self {
+        Self {
+            store_idx,
+            arena: Arc::default(),
+        }
+    }
+
+    fn unwrap_stored(&self, stored: &Stored<GlobalIdx>) -> GlobalIdx {
+        stored.entity_index(self.store_idx).unwrap_or_else(|| {
+            panic!(
+                "entity reference ({:?}) does not belong to store {:?}",
+                stored, self.store_idx,
+            )
+        })
+    }
+
+    pub fn resolve(&self, global: &Global) -> GlobalEntity {
+        let idx = self.unwrap_stored(global.as_inner());
+        self.arena
+            .read()
+            .get(idx)
+            .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"))
+            .clone()
+    }
+
+    pub fn resolve_mut_with<F, R>(&mut self, global: &Global, f: F) -> R
+    where
+        F: FnOnce(&mut GlobalEntity) -> R,
+    {
+        let idx = self.unwrap_stored(global.as_inner());
+        let mut arena = self.arena.write();
+        let entity = arena
+            .get_mut(idx)
+            .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"));
+        f(entity)
+    }
 }
 
 #[test]
@@ -224,13 +273,14 @@ impl Fuel {
 impl StoreInner {
     /// Creates a new [`StoreInner`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
+        let store_idx = StoreIdx::new();
         StoreInner {
             engine: engine.clone(),
-            store_idx: StoreIdx::new(),
+            store_idx,
             funcs: Arena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
-            globals: Arena::new(),
+            globals: Globals::new(store_idx),
             instances: Arena::new(),
             datas: Arena::new(),
             elems: Arena::new(),
@@ -283,7 +333,7 @@ impl StoreInner {
 
     /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
     pub fn alloc_global(&mut self, global: GlobalEntity) -> Global {
-        let global = self.globals.alloc(global);
+        let global = self.globals.arena.write().alloc(global);
         Global::from_inner(self.wrap_stored(global))
     }
 
@@ -432,8 +482,8 @@ impl StoreInner {
     ///
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn resolve_global(&self, global: &Global) -> &GlobalEntity {
-        self.resolve(global.as_inner(), &self.globals)
+    pub fn resolve_global(&self, global: &Global) -> GlobalEntity {
+        self.globals.resolve(global)
     }
 
     /// Returns an exclusive reference to the [`GlobalEntity`] associated to the given [`Global`].
@@ -442,9 +492,11 @@ impl StoreInner {
     ///
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn resolve_global_mut(&mut self, global: &Global) -> &mut GlobalEntity {
-        let idx = self.unwrap_stored(global.as_inner());
-        Self::resolve_mut(idx, &mut self.globals)
+    pub fn with_resolve_global_mut<F, R>(&mut self, global: &Global, f: F) -> R
+    where
+        F: FnOnce(&mut GlobalEntity) -> R,
+    {
+        self.globals.resolve_mut_with(global, f)
     }
 
     /// Returns a shared reference to the [`TableEntity`] associated to the given [`Table`].
@@ -697,6 +749,10 @@ impl<T> Store<T> {
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
         self.inner.engine()
+    }
+
+    pub fn globals(&self) -> Globals {
+        self.inner.globals.clone()
     }
 
     /// Returns a shared reference to the user provided data owned by this [`Store`].
