@@ -392,6 +392,6 @@ impl InstanceCache {
                     self.instance
                 )
             });
-        ctx.with_resolve_global_mut(&global, |entity| entity.set_untyped(new_value))
+        ctx.resolve_global_mut_with(&global, |entity| entity.set_untyped(new_value))
     }
 }

@@ -258,7 +258,7 @@ impl Global {
         ctx.as_context_mut()
             .store
             .inner
-            .with_resolve_global_mut(self, |entity| entity.set(new_value))
+            .resolve_global_mut_with(self, |entity| entity.set(new_value))
     }
 
     /// Returns the current value of the global variable.

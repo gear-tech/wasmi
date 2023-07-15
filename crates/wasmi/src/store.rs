@@ -492,7 +492,7 @@ impl StoreInner {
     ///
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn with_resolve_global_mut<F, R>(&mut self, global: &Global, f: F) -> R
+    pub fn resolve_global_mut_with<F, R>(&mut self, global: &Global, f: F) -> R
     where
         F: FnOnce(&mut GlobalEntity) -> R,
     {
