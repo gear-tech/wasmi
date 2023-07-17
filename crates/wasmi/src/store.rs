@@ -152,7 +152,7 @@ impl Globals {
             .clone()
     }
 
-    pub fn resolve_mut_with<F, R>(&mut self, global: &Global, f: F) -> R
+    pub fn resolve_mut_with<F, R>(&self, global: &Global, f: F) -> R
     where
         F: FnOnce(&mut GlobalEntity) -> R,
     {
