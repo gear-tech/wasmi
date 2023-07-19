@@ -311,22 +311,22 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace -- -D warnings $CLIPPY_FLAGS
+          args: --workspace -- -D warnings ${{ env.CLIPPY_FLAGS }}
       - name: Clippy (all features)
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace --all-features -- -D warnings $CLIPPY_FLAGS
+          args: --workspace --all-features -- -D warnings ${{ env.CLIPPY_FLAGS }}
       - name: Clippy (no_std)
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace --no-default-features -- -D warnings $CLIPPY_FLAGS
+          args: --workspace --no-default-features -- -D warnings ${{ env.CLIPPY_FLAGS }}
       - name: Clippy (tests)
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace --tests -- -D warnings $CLIPPY_FLAGS
+          args: --workspace --tests -- -D warnings ${{ env.CLIPPY_FLAGS }}
 
   coverage:
     name: Coverage
