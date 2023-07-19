@@ -29,6 +29,7 @@ use crate::{
 use alloc::sync::Arc;
 use core::{
     fmt::{self, Debug},
+    marker::PhantomData,
     sync::atomic::{AtomicU32, Ordering},
 };
 use spin::RwLock;
@@ -99,7 +100,7 @@ pub struct StoreInner {
     /// Stored tables.
     tables: Arena<TableIdx, TableEntity>,
     /// Stored global variables.
-    globals: Globals,
+    globals: InnerGlobals,
     /// Stored module instances.
     instances: Arena<InstanceIdx, InstanceEntity>,
     /// Stored data segments.
@@ -118,15 +119,37 @@ pub struct StoreInner {
     fuel: Fuel,
 }
 
+#[derive(Debug)]
+pub struct Globals {
+    inner: InnerGlobals,
+    // make the type neither Sync nor Send
+    // because we don't want the executor to run into UB
+    // as its cache may have a mutable pointer to global
+    _pd: PhantomData<*mut ()>,
+}
+
+impl Globals {
+    pub fn resolve(&self, global: &Global) -> GlobalEntity {
+        self.inner.resolve(global)
+    }
+
+    pub fn resolve_mut_with<F, R>(&self, global: &Global, f: F) -> R
+    where
+        F: FnOnce(&mut GlobalEntity) -> R,
+    {
+        self.inner.resolve_mut_with(global, f)
+    }
+}
+
 type GlobalsArena = Arena<GlobalIdx, GlobalEntity>;
 
-#[derive(Debug, Clone)]
-pub struct Globals {
+#[derive(Debug)]
+struct InnerGlobals {
     store_idx: StoreIdx,
     arena: Arc<RwLock<GlobalsArena>>,
 }
 
-impl Globals {
+impl InnerGlobals {
     fn new(store_idx: StoreIdx) -> Self {
         Self {
             store_idx,
@@ -143,7 +166,7 @@ impl Globals {
         })
     }
 
-    pub fn resolve(&self, global: &Global) -> GlobalEntity {
+    fn resolve(&self, global: &Global) -> GlobalEntity {
         let idx = self.unwrap_stored(global.as_inner());
         self.arena
             .read()
@@ -152,7 +175,7 @@ impl Globals {
             .clone()
     }
 
-    pub fn resolve_mut_with<F, R>(&self, global: &Global, f: F) -> R
+    fn resolve_mut_with<F, R>(&self, global: &Global, f: F) -> R
     where
         F: FnOnce(&mut GlobalEntity) -> R,
     {
@@ -162,6 +185,16 @@ impl Globals {
             .get_mut(idx)
             .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"));
         f(entity)
+    }
+
+    fn outer_globals(&self) -> Globals {
+        Globals {
+            inner: Self {
+                store_idx: self.store_idx,
+                arena: self.arena.clone(),
+            },
+            _pd: PhantomData,
+        }
     }
 }
 
@@ -280,7 +313,7 @@ impl StoreInner {
             funcs: Arena::new(),
             memories: Arena::new(),
             tables: Arena::new(),
-            globals: Globals::new(store_idx),
+            globals: InnerGlobals::new(store_idx),
             instances: Arena::new(),
             datas: Arena::new(),
             elems: Arena::new(),
@@ -752,7 +785,7 @@ impl<T> Store<T> {
     }
 
     pub fn globals(&self) -> Globals {
-        self.inner.globals.clone()
+        self.inner.globals.outer_globals()
     }
 
     /// Returns a shared reference to the user provided data owned by this [`Store`].
