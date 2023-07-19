@@ -1,6 +1,6 @@
 use super::{AsContext, AsContextMut, Stored};
 use crate::{core::ValueType, value::WithType, Value};
-use core::{fmt, fmt::Display};
+use core::{fmt, fmt::Display, ptr::NonNull};
 use wasmi_arena::ArenaIndex;
 use wasmi_core::UntypedValue;
 
@@ -200,6 +200,12 @@ impl GlobalEntity {
     /// Returns the current untyped value of the global variable.
     pub(crate) fn get_untyped(&self) -> UntypedValue {
         self.value
+    }
+
+    /// Returns a pointer to the untyped value of the global variable.
+    #[allow(dead_code)]
+    pub(crate) fn get_untyped_ptr(&mut self) -> NonNull<UntypedValue> {
+        NonNull::from(&mut self.value)
     }
 }
 

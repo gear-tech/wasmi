@@ -302,6 +302,54 @@ impl InstanceCache {
         }
     }
 
+    /// Loads the pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a default table.
+    #[cold]
+    #[inline]
+    #[allow(dead_code)]
+    fn load_global_at(&mut self, ctx: &mut StoreInner, index: GlobalIdx) -> NonNull<UntypedValue> {
+        let global = ctx
+            .resolve_instance(self.instance())
+            .get_global(index.to_u32())
+            .as_ref()
+            .map(|_global| unreachable!())
+            .unwrap_or_else(|| {
+                unreachable!(
+                    "missing global variable at index {index:?} for instance: {:?}",
+                    self.instance
+                )
+            });
+        self.last_global = Some((index, global));
+        global
+    }
+
+    /// Returns a pointer to the value of the global variable at `index`
+    /// of the currently used [`Instance`].
+    ///
+    /// # Panics
+    ///
+    /// If the currently used [`Instance`] does not have a [`Func`] at the index.
+    #[inline(always)]
+    #[allow(dead_code)]
+    fn get_global_mut<'ctx>(
+        &mut self,
+        ctx: &'ctx mut StoreInner,
+        global_index: GlobalIdx,
+    ) -> &'ctx mut UntypedValue {
+        let mut _ptr = match self.last_global {
+            Some((index, global)) if index == global_index => global,
+            _ => self.load_global_at(ctx, global_index),
+        };
+        // SAFETY: This deref is safe since we only hold this pointer
+        //         as long as we are sure that nothing else can manipulate
+        //         the global in a way that would invalidate the pointer.
+        unreachable!()
+    }
+
     /// Returns a pointer to the value of the global variable at `index`
     /// of the currently used [`Instance`].
     ///
