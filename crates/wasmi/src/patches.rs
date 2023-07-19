@@ -37,7 +37,7 @@ type GlobalsArena = Arena<GlobalIdx, GlobalEntity>;
 #[derive(Debug)]
 pub(crate) struct InnerGlobals {
     store_idx: StoreIdx,
-    pub(crate) arena: Arc<RwLock<GlobalsArena>>,
+    arena: Arc<RwLock<GlobalsArena>>,
 }
 
 impl InnerGlobals {
@@ -46,6 +46,10 @@ impl InnerGlobals {
             store_idx,
             arena: Arc::default(),
         }
+    }
+
+    pub(crate) fn alloc(&mut self, entity: GlobalEntity) -> GlobalIdx {
+        self.arena.write().alloc(entity)
     }
 
     fn unwrap_stored(&self, stored: &Stored<GlobalIdx>) -> GlobalIdx {

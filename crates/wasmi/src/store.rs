@@ -285,7 +285,7 @@ impl StoreInner {
 
     /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
     pub fn alloc_global(&mut self, global: GlobalEntity) -> Global {
-        let global = self.globals.arena.write().alloc(global);
+        let global = self.globals.alloc(global);
         Global::from_inner(self.wrap_stored(global))
     }
 
