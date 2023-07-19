@@ -1,5 +1,6 @@
 use super::bytecode::{DataSegmentIdx, ElementSegmentIdx, FuncIdx, GlobalIdx, TableIdx};
 use crate::{
+    global::GlobalEntity,
     instance::InstanceEntity,
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
@@ -310,13 +311,12 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have a default table.
     #[cold]
     #[inline]
-    #[allow(dead_code)]
     fn load_global_at(&mut self, ctx: &mut StoreInner, index: GlobalIdx) -> NonNull<UntypedValue> {
         let global = ctx
             .resolve_instance(self.instance())
             .get_global(index.to_u32())
             .as_ref()
-            .map(|_global| unreachable!())
+            .map(|global| ctx.resolve_global_mut_with(global, GlobalEntity::get_untyped_ptr))
             .unwrap_or_else(|| {
                 unreachable!(
                     "missing global variable at index {index:?} for instance: {:?}",
@@ -334,20 +334,19 @@ impl InstanceCache {
     ///
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
     #[inline(always)]
-    #[allow(dead_code)]
     fn get_global_mut<'ctx>(
         &mut self,
         ctx: &'ctx mut StoreInner,
         global_index: GlobalIdx,
     ) -> &'ctx mut UntypedValue {
-        let mut _ptr = match self.last_global {
+        let mut ptr = match self.last_global {
             Some((index, global)) if index == global_index => global,
             _ => self.load_global_at(ctx, global_index),
         };
         // SAFETY: This deref is safe since we only hold this pointer
         //         as long as we are sure that nothing else can manipulate
         //         the global in a way that would invalidate the pointer.
-        unreachable!()
+        unsafe { ptr.as_mut() }
     }
 
     /// Returns a pointer to the value of the global variable at `index`
@@ -358,16 +357,7 @@ impl InstanceCache {
     /// If the currently used [`Instance`] does not have a [`Func`] at the index.
     #[inline(always)]
     pub fn get_global(&mut self, ctx: &mut StoreInner, global_index: GlobalIdx) -> UntypedValue {
-        ctx.resolve_instance(self.instance())
-            .get_global(global_index.to_u32())
-            .as_ref()
-            .map(|global| ctx.resolve_global(global).get_untyped())
-            .unwrap_or_else(|| {
-                unreachable!(
-                    "missing global variable at index {global_index:?} for instance: {:?}",
-                    self.instance
-                )
-            })
+        *self.get_global_mut(ctx, global_index)
     }
 
     /// Returns a pointer to the value of the global variable at `index`
@@ -383,15 +373,6 @@ impl InstanceCache {
         global_index: GlobalIdx,
         new_value: UntypedValue,
     ) {
-        let global = ctx
-            .resolve_instance(self.instance())
-            .get_global(global_index.to_u32())
-            .unwrap_or_else(|| {
-                unreachable!(
-                    "missing global variable at index {global_index:?} for instance: {:?}",
-                    self.instance
-                )
-            });
-        ctx.resolve_global_mut_with(&global, |entity| entity.set_untyped(new_value))
+        *self.get_global_mut(ctx, global_index) = new_value;
     }
 }
