@@ -1,9 +1,10 @@
 //! Gear patches to WASMI
 
 use crate::{
-    global::{GlobalEntity, GlobalIdx},
+    global::GlobalEntity,
     store::{StoreIdx, Stored},
     Global,
+    GlobalIdx,
 };
 use alloc::sync::Arc;
 use core::marker::PhantomData;
