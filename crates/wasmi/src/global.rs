@@ -203,7 +203,6 @@ impl GlobalEntity {
     }
 
     /// Returns a pointer to the untyped value of the global variable.
-    #[allow(dead_code)]
     pub(crate) fn get_untyped_ptr(&mut self) -> NonNull<UntypedValue> {
         NonNull::from(&mut self.value)
     }
