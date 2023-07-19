@@ -3,6 +3,7 @@ use crate::{
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{Trampoline, TrampolineEntity, TrampolineIdx},
     memory::DataSegment,
+    patches::InnerGlobals,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -15,7 +16,7 @@ use crate::{
     FuncType,
     Global,
     GlobalEntity,
-    GlobalIdx,
+    Globals,
     Instance,
     InstanceEntity,
     InstanceIdx,
@@ -26,13 +27,10 @@ use crate::{
     TableEntity,
     TableIdx,
 };
-use alloc::sync::Arc;
 use core::{
     fmt::{self, Debug},
-    marker::PhantomData,
     sync::atomic::{AtomicU32, Ordering},
 };
-use spin::RwLock;
 use wasmi_arena::{Arena, ArenaIndex, GuardedEntity};
 use wasmi_core::TrapCode;
 
@@ -117,85 +115,6 @@ pub struct StoreInner {
     engine: Engine,
     /// The fuel of the [`Store`].
     fuel: Fuel,
-}
-
-#[derive(Debug)]
-pub struct Globals {
-    inner: InnerGlobals,
-    // make the type neither Sync nor Send
-    // because we don't want the executor to run into UB
-    // as its cache may have a mutable pointer to global
-    _pd: PhantomData<*mut ()>,
-}
-
-impl Globals {
-    pub fn resolve(&self, global: &Global) -> GlobalEntity {
-        self.inner.resolve(global)
-    }
-
-    pub fn resolve_mut_with<F, R>(&self, global: &Global, f: F) -> R
-    where
-        F: FnOnce(&mut GlobalEntity) -> R,
-    {
-        self.inner.resolve_mut_with(global, f)
-    }
-}
-
-type GlobalsArena = Arena<GlobalIdx, GlobalEntity>;
-
-#[derive(Debug)]
-struct InnerGlobals {
-    store_idx: StoreIdx,
-    arena: Arc<RwLock<GlobalsArena>>,
-}
-
-impl InnerGlobals {
-    fn new(store_idx: StoreIdx) -> Self {
-        Self {
-            store_idx,
-            arena: Arc::default(),
-        }
-    }
-
-    fn unwrap_stored(&self, stored: &Stored<GlobalIdx>) -> GlobalIdx {
-        stored.entity_index(self.store_idx).unwrap_or_else(|| {
-            panic!(
-                "entity reference ({:?}) does not belong to store {:?}",
-                stored, self.store_idx,
-            )
-        })
-    }
-
-    fn resolve(&self, global: &Global) -> GlobalEntity {
-        let idx = self.unwrap_stored(global.as_inner());
-        self.arena
-            .read()
-            .get(idx)
-            .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"))
-            .clone()
-    }
-
-    fn resolve_mut_with<F, R>(&self, global: &Global, f: F) -> R
-    where
-        F: FnOnce(&mut GlobalEntity) -> R,
-    {
-        let idx = self.unwrap_stored(global.as_inner());
-        let mut arena = self.arena.write();
-        let entity = arena
-            .get_mut(idx)
-            .unwrap_or_else(|| panic!("failed to resolve stored entity: {idx:?}"));
-        f(entity)
-    }
-
-    fn outer_globals(&self) -> Globals {
-        Globals {
-            inner: Self {
-                store_idx: self.store_idx,
-                arena: self.arena.clone(),
-            },
-            _pd: PhantomData,
-        }
-    }
 }
 
 #[test]

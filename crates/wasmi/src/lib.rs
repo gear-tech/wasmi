@@ -156,7 +156,7 @@ pub use self::{
         ModuleImportsIter,
         Read,
     },
-    store::{AsContext, AsContextMut, Globals, Store, StoreContext, StoreContextMut},
+    store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
     value::Value,
 };
@@ -168,3 +168,6 @@ use self::{
     store::{StoreInner, Stored},
     table::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx, TableEntity, TableIdx},
 };
+
+mod patches;
+pub use patches::Globals;
